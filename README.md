@@ -1,4 +1,4 @@
-# HAUST 自动领取水龙头
+# HAUST BOT
 
 ![banner](image.png)
 - 官网 https://haust.network/
