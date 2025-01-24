@@ -1,73 +1,40 @@
-import http from 'http';
-import https from 'https';
+import { ProxyAgent } from 'undici';
 
 export default class IPRoyalProxy {
-  constructor(username, password, country = 'br', session = 'sgn34f3e', lifetime = '10m') {
-    this.username = username;
-    this.password = `${password}_country-${country}_session-${session}_lifetime-${lifetime}`;
-    this.proxyHost = 'geo.iproyal.com';
-    this.proxyPort = 12321;
+  constructor(apiKey) {
+    this.agent = new ProxyAgent(apiKey);
   }
 
-  getProxyOptions(targetUrl) {
-    const targetUrlObj = new URL(targetUrl);
-    const auth = 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64');
-
-    return {
-      host: this.proxyHost,
-      port: this.proxyPort,
-      headers: {
-        'Host': targetUrlObj.host,
-        'Proxy-Authorization': auth
-      }
-    };
-  }
-
-  request(method, url, options = {}) {
-    return new Promise((resolve, reject) => {
-      const protocol = url.startsWith('https') ? https : http;
-      const proxyOptions = this.getProxyOptions(url);
-      
-      const reqOptions = {
-        ...proxyOptions,
-        method: method.toUpperCase(),
-        path: url,
-        ...options
-      };
-
-      const req = protocol.request(reqOptions, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
-        res.on('end', () => resolve({
-          statusCode: res.statusCode,
-          headers: res.headers,
-          body: data
-        }));
+  async request(method, url, options = {}) {
+    try {
+      const response = await fetch(url, {
+        method,
+        ...options,
+        dispatcher: this.agent
       });
-
-      req.on('error', reject);
       
-      if (options.body) {
-        req.write(options.body);
-      }
-      
-      req.end();
-    });
+      return {
+        statusCode: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: await response.text()
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  get(url, options = {}) {
+  async get(url, options = {}) {
     return this.request('GET', url, options);
   }
 
-  post(url, body, options = {}) {
+  async post(url, body, options = {}) {
     return this.request('POST', url, {
       ...options,
       headers: {
         ...options.headers,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body)
+        'Content-Type': 'application/json'
       },
-      body
+      body: JSON.stringify(body)
     });
   }
 }
