@@ -1,9 +1,7 @@
 # HAUST BOT
 
-![banner](image.png)
-- 官网 https://haust.network/
 
-## 什么是 Haust Network
+## 什么是 [Haust Network](https://haust.network/)
 
 Haust Network: 一个多功能的区块链解决方案
 
@@ -26,16 +24,11 @@ Haust 具有高安全性和低手续费的特点，并提供了自己的 SDK 用
 - 自动将 ETH 从 Sepolia 分发到 wallets.json 中的其他地址
 - 确保 wallets.json 中的第一个钱包有足够的 Sepolia ETH
 
-   ![bridge](image-2.png)
-
 ### 智能合约部署
 - 自动为每个钱包部署智能合约
 - 部署失败时自动重试（最多3次）
 - 每次重试间隔0.5-3秒随机
 - 部署成功后自动进行代币转账测试
-   ```bash
-   npm run deploy
-   ```
 
 ## 功能特性
 
@@ -50,8 +43,6 @@ Haust 具有高安全性和低手续费的特点，并提供了自己的 SDK 用
   - 代理失败时自动切换
   - 支持无代理模式运行
 - **所有钱包信息保存在 wallets.json 中**
-
-   ![faucet](image-1.png)
 
 ## 环境要求
 
@@ -78,9 +69,7 @@ Haust 具有高安全性和低手续费的特点，并提供了自己的 SDK 用
 
 运行程序后会显示以下菜单：
 
-==========================
-       HAUST BOT
-==========================
+=======HAUST BOT=======
 1. 创建新钱包
 2. 自动领取测试代币
 3. 自动部署合约交互
