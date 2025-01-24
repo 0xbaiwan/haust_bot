@@ -1,33 +1,7 @@
-import 'dotenv/config';
 import axios from 'axios';
-import fs from 'fs/promises';
-
-// 检查并获取API Key
-async function getApiKey(readline) {
-  try {
-    // 检查.env文件是否存在
-    await fs.promises.access('.env');
-    const envContent = await fs.promises.readFile('.env', 'utf-8');
-    
-    // 如果.env文件不为空且包含API Key
-    if (envContent && envContent.includes('IPROYAL_API_KEY=')) {
-      return;
-    }
-  } catch (err) {
-    // .env文件不存在
-  }
-
-  // 提示用户输入API Key
-  const apiKey = await readline.question('请输入IPRoyal API Key（直接按回车将以无代理模式运行）：');
-  
-  if (apiKey) {
-    // 将API Key保存到.env文件
-    await fs.promises.writeFile('.env', `IPROYAL_API_KEY=${apiKey}\n`);
-    log.info('API Key已保存到.env文件');
-  } else {
-    log.warn('未提供API Key，将以无代理模式运行');
-  }
-}
+import { promises as fs } from 'fs';
+import config from './config.js';
+import fetch from 'node-fetch';
 import log from "./utils/logger.js";
 import iniBapakBudi from "./utils/banner.js";
 
@@ -56,25 +30,14 @@ export async function readWallets() {
  */
 export async function readProxies() {
     try {
-        // IPRoyal API配置
-        const apiKey = process.env.IPROYAL_API_KEY;
-        if (!apiKey) {
-            throw new Error('请设置IPRoyal API Key');
+        // 使用新的代理池创建方法
+        const proxies = await IPRoyalProxy.createProxyPool();
+        if (proxies.length === 0) {
+            log.warn('未配置有效代理，将以无代理模式运行');
         }
-
-        // 获取动态IP
-        const response = await axios.get('https://dashboard.iproyal.com/api/proxies', {
-            headers: {
-                'Authorization': `Bearer ${apiKey}`
-            }
-        });
-
-        // 解析响应并返回代理列表
-        return response.data.proxies.map(proxy => {
-            return `${proxy.username}:${proxy.password}`;
-        });
+        return proxies;
     } catch (err) {
-        log.error('获取IPRoyal代理失败:', err.message);
+        log.error('获取代理失败:', err.message);
         return [];
     }
 }
@@ -116,7 +79,7 @@ const claimFaucet = async (address, proxies) => {
             if (attempt < maxRetries) {
                 currentProxy = getRandomProxy(proxies);
                 // 增加请求间隔时间以避免429错误
-                const delay = Math.min(5000, 1000 * Math.pow(2, attempt)); // 指数退避
+                const delay = Math.min(10000, 2000 * Math.pow(2, attempt)); // 增加初始延迟和最大延迟
                 log.info(`等待 ${delay} 毫秒后重试...`);
                 await new Promise((resolve) => setTimeout(resolve, delay));
             } else {
@@ -133,8 +96,30 @@ function getRandomProxy(proxies) {
         return null;
     }
     
-    const proxy = proxies[Math.floor(Math.random() * proxies.length)];
-    return new IPRoyalProxy(proxy);
+    // 随机选择一个已初始化的代理
+    return proxies[Math.floor(Math.random() * proxies.length)];
+}
+
+// 测试所有代理连接
+async function testAllProxies() {
+    const proxies = await readProxies();
+    if (proxies.length === 0) {
+        log.warn('没有可用的代理进行测试');
+        return;
+    }
+
+    log.info('开始测试所有代理连接...');
+    const results = await Promise.allSettled(
+        proxies.map(proxy => proxy.testConnection())
+    );
+
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+            log.success(`代理 ${index + 1} 连接成功: ${result.value}`);
+        } else {
+            log.error(`代理 ${index + 1} 连接失败: ${result.reason.message}`);
+        }
+    });
 }
 
 // 显示主菜单
@@ -167,9 +152,12 @@ async function handleMenu(choice, readline) {
             await distributeSepoliaETH(readline);
             break;
         case '5':
+            await testAllProxies();
+            break;
+        case '6':
             process.exit(0);
         default:
-            log.warn("无效的选择，请输入 1-5 之间的数字");
+            log.warn("无效的选择，请输入 1-6 之间的数字");
     }
 }
 
@@ -319,13 +307,18 @@ const main = async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // 使用 node:readline/promises 模块
-    const readline = (await import('node:readline/promises')).createInterface({
+    const { createInterface } = await import('node:readline/promises');
+    const readline = createInterface({
         input: process.stdin,
         output: process.stdout
     });
 
-    // 获取API Key
-    await getApiKey(readline);
+    // 检查代理配置
+    if (!config.proxyUrl) {
+        log.warn('未配置代理，将以无代理模式运行');
+    } else {
+        log.info('已配置代理');
+    }
 
     while (true) {
         showMenu();
