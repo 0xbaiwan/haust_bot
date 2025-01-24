@@ -30,8 +30,6 @@ async function getApiKey(readline) {
 }
 import log from "./utils/logger.js";
 import iniBapakBudi from "./utils/banner.js";
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import { SocksProxyAgent } from 'socks-proxy-agent';
 
 /**
  * 读取钱包文件
@@ -103,13 +101,7 @@ const claimFaucet = async (address, proxies) => {
             };
 
             if (currentProxy) {
-                axiosConfig.proxy = false;
-                const proxyOptions = currentProxy.getProxyOptions(axiosConfig.url);
-                axiosConfig.httpsAgent = new HttpsProxyAgent({
-                    host: proxyOptions.host,
-                    port: proxyOptions.port,
-                    headers: proxyOptions.headers
-                });
+                axiosConfig.httpsAgent = currentProxy.agent;
                 log.info(`使用 IPRoyal 动态代理 钱包: ${address}`);
             } else {
                 log.warn(`钱包 ${address} 无可用代理，将不使用代理`);
@@ -142,9 +134,7 @@ function getRandomProxy(proxies) {
     }
     
     const proxy = proxies[Math.floor(Math.random() * proxies.length)];
-    const [username, password] = proxy.split(':');
-    
-    return new IPRoyalProxy(username, password);
+    return new IPRoyalProxy(proxy);
 }
 
 // 显示主菜单
