@@ -18,6 +18,7 @@
     "dotenv": "^16.4.7",
     "ethers": "^6.13.4",
     "https-proxy-agent": "^7.0.6",
+    "node-fetch": "^3.3.2",
     "socks-proxy-agent": "^8.0.5",
     "solc": "^0.8.28",
     "undici": "^7.3.0"
