@@ -1,0 +1,25 @@
+
+{
+  "name": "haust-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "setup": "node setup.js",
+    "deploy": "node deploy.js",
+    "bridge": "node bridge.js",
+    "mint": "node mint.js"
+  },
+  "author": "0xbaiwan",
+  "license": "MIT",
+  "description": "auto claim haust faucet",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "chalk": "^5.4.1",
+    "ethers": "^6.13.4",
+    "https-proxy-agent": "^7.0.6",
+    "socks-proxy-agent": "^8.0.5",
+    "solc": "^0.8.28"
+  }
+}
